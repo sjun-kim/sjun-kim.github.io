@@ -449,7 +449,7 @@ function render(){
   document.getElementById('clock').textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
   document.getElementById('dateLabel').textContent =
     `${now.getFullYear()}. ${now.getMonth()+1}. ${now.getDate()} (${['일','월','화','수','목','금','토'][now.getDay()]})`;
-  document.getElementById('testBadge').textContent = customNow ? '(INPUT)' : '';
+  document.getElementById('testBadge').textContent = customNow ? 'STOP' : '';
 
   const info = findActiveSchedule(now);
   const statusEl = document.getElementById('statusLine');
