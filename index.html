@@ -168,7 +168,7 @@
   </header>
 
   <div class="time-test">
-    <button class="time-test-toggle" id="timeTestToggle">🕒 시간 직접 입력해서 테스트</button>
+    <button class="time-test-toggle" id="timeTestToggle">시간 직접 입력</button>
     <div class="time-test-panel" id="timeTestPanel" hidden>
       <input type="date" id="overrideDate">
       <input type="time" id="overrideTime">
@@ -199,16 +199,16 @@
 let DATA = null;
 
 const STOP_META = {
-  school:          { label: '학교',   color: 'var(--school)' },
-  osongStation:    { label: '오송역', color: 'var(--osong)' },
-  jochiwonStation: { label: '조치원역', color: 'var(--jochiwon)' }
+  school:          { label: '학교',   originLabel: '학생회관', color: 'var(--school)' },
+  osongStation:    { label: '오송역', originLabel: '오송역',   color: 'var(--osong)' },
+  jochiwonStation: { label: '조치원역', originLabel: '조치원역', color: 'var(--jochiwon)' }
 };
 const STOP_ORDER = ['school', 'osongStation', 'jochiwonStation'];
 
 let selectedOrigin = 'school';
 let customNow = null; // Date | null — 테스트용으로 고정한 시각. null이면 실시간.
 
-const LEAD_MINUTES = 5;
+const LEAD_MINUTES = 1;
 let notifyOn = {};          // { [destKey]: boolean }
 let notifyScheduled = {};   // { [destKey]: { round, min, timeoutId } }
 
@@ -243,7 +243,8 @@ function fireNotification(destKey, dep){
   const meta = STOP_META[destKey];
   const originMeta = STOP_META[selectedOrigin];
   const title = `${meta.label}행 버스 ${LEAD_MINUTES}분 전`;
-  const body = `${originMeta.label} 출발 ${fmtFromMinutes(dep.min)} · ${dep.round}회차`;
+  const arrivalNote = (destKey === 'school' && dep.endPoint) ? ` · ${dep.endPoint} 도착` : '';
+  const body = `${originMeta.originLabel} 출발 ${fmtFromMinutes(dep.min)} · ${dep.round}회차${arrivalNote}`;
   const options = { body, icon: 'icon-192.png', badge: 'icon-192.png', tag: 'bus-' + destKey };
   if(navigator.serviceWorker && navigator.serviceWorker.ready){
     navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options)).catch(() => {
@@ -324,9 +325,9 @@ function getDepartures(schedule, originKey, destKey, hasLoopInfo){
 
     if(destKey === 'school' && originKey !== 'school'){
       if(t.school !== null && toMinutes(t.school) > originMin){
-        results.push({ round: t.round, min: originMin, exact: true });
+        results.push({ round: t.round, min: originMin, exact: true, endPoint: t.endPoint });
       } else if(hasLoopInfo && t.endPoint){
-        results.push({ round: t.round, min: originMin, exact: false });
+        results.push({ round: t.round, min: originMin, exact: false, endPoint: t.endPoint });
       }
       continue;
     }
@@ -375,21 +376,22 @@ function renderCard(destKey, times, nowMin){
   const two = nextTwo(times, nowMin);
   let html = `<div class="card" style="--accent:${meta.color}">
     <div class="dest"><span class="dot"></span>${meta.label} 방향</div>
-    <div class="sub">${originMeta.label} → ${meta.label}</div>`;
+    <div class="sub">${originMeta.originLabel} → ${meta.label}</div>`;
   if(two.length === 0){
     html += `<div class="none">오늘 남은 운행이 없습니다</div>`;
   } else {
+    const arrivalNote = (t) => (destKey === 'school' && t.endPoint) ? ` · ${t.endPoint} 도착` : '';
     const first = two[0];
-    html += `<div class="next-time">${fmtFromMinutes(first.min)}<span class="tag">${first.tomorrow ? '내일' : first.round+'회차'}</span></div>`;
+    html += `<div class="next-time">${fmtFromMinutes(first.min)}<span class="tag">${first.tomorrow ? '내일' : first.round+'회차'}${arrivalNote(first)}</span></div>`;
     if(two[1]){
-      html += `<div class="after-time">그 다음 <span class="val">${fmtFromMinutes(two[1].min)}</span>${two[1].tomorrow ? ' (내일)' : ' · '+two[1].round+'회차'}</div>`;
+      html += `<div class="after-time">그 다음 <span class="val">${fmtFromMinutes(two[1].min)}</span>${two[1].tomorrow ? ' (내일)' : ' · '+two[1].round+'회차'}${arrivalNote(two[1])}</div>`;
     }
   }
   const isOn = !!notifyOn[destKey];
   const disabled = !!customNow;
   html += `<label class="notify-row ${isOn?'active':''}">
     <input type="checkbox" class="notify-checkbox" data-dest="${destKey}" ${isOn?'checked':''} ${disabled?'disabled':''}>
-    <span>🔔 출발 ${LEAD_MINUTES}분 전 알림받기${disabled ? '<span class="notify-sub">테스트 시간에서는 사용할 수 없어요</span>' : ''}</span>
+    <span>출발 ${LEAD_MINUTES}분 전 알림받기${disabled ? '<span class="notify-sub">실시간에서만 사용할 수 있어요</span>' : ''}</span>
   </label>`;
   html += `</div>`;
   return html;
@@ -447,7 +449,7 @@ function render(){
   document.getElementById('clock').textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
   document.getElementById('dateLabel').textContent =
     `${now.getFullYear()}. ${now.getMonth()+1}. ${now.getDate()} (${['일','월','화','수','목','금','토'][now.getDay()]})`;
-  document.getElementById('testBadge').textContent = customNow ? 'TEST' : '';
+  document.getElementById('testBadge').textContent = customNow ? '(INPUT)' : '';
 
   const info = findActiveSchedule(now);
   const statusEl = document.getElementById('statusLine');
