@@ -1,0 +1,16 @@
+{
+  "name": "홍익대 세종캠퍼스 통학버스",
+  "short_name": "통학버스",
+  "description": "홍익대학교 세종캠퍼스 통학버스 다음 출발 시간 안내",
+  "start_url": "./hongik_bus_app.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d1a1f",
+  "theme_color": "#0d1a1f",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

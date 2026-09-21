@@ -1,0 +1,360 @@
+{
+  "source": "https://www.hongik.ac.kr/kr/introduction/school-bus.do",
+  "campus": "세종캠퍼스",
+  "lastUpdated": "2026-08-31",
+  "contact": {
+    "operation": {
+      "company": "한화고속관광",
+      "phone": "044-715-7783",
+      "note": "운행일정, 유실물 등 문의"
+    },
+    "department": {
+      "name": "학생복지팀",
+      "email": "hakbok@hongik.ac.kr"
+    }
+  },
+  "schedules":
+    {
+      "id": "second_semester_2026",
+      "title": "2026학년도 2학기 통학버스 운행 시간표",
+      "operatingPeriod": {
+        "start": "2026-09-01",
+        "end": "2026-12-21",
+        "operatingDays": "월~금요일",
+        "nonOperatingDays": "토/일요일 및 공휴일"
+      },
+      "campusInternalLoop": {
+        "route": "조치원역 → 가온관(A동) → 세종관(M동)",
+        "jochiwonToGaonMinutes": 7,
+        "gaonToSejongMinutes": 3
+      },
+      "notes": [
+        "7, 11, 15, 19회차: '학교→오송역→조치원역' 운행 (탑승 시 주의)",
+        "25, 28, 31, 34회차: '학교→조치원역→오송역' 운행 (탑승 시 주의)",
+        "39회차: '학교→오송역' 직행 (탑승 시 주의)",
+        "43회차: '학교→조치원역→오송역' 운행 후 학교 복귀하지 않고 운행종료 (탑승 시 주의)"
+      ],
+      "stops": [
+        "학교(학생회관 승강장)",
+        "오송역 3번출구 투어버스 승차장",
+        "조치원역(메가박스 앞 버스승강장)"
+      ],
+      "trips": [
+        {
+          "round": 1,
+          "school": null,
+          "osongStation": "08:20",
+          "jochiwonStation": null,
+          "endPoint": "세종관(M동)",
+          "note": "조치원역에서 학교 직행 (조치원역 별도 정차 없음)"
+        },
+        {
+          "round": 2,
+          "school": null,
+          "osongStation": null,
+          "jochiwonStation": "08:35",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 3,
+          "school": null,
+          "osongStation": null,
+          "jochiwonStation": "08:45",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 4,
+          "school": null,
+          "osongStation": "08:35",
+          "jochiwonStation": "08:52",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 5,
+          "school": "08:50",
+          "osongStation": null,
+          "jochiwonStation": "09:00",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 6,
+          "school": "09:20",
+          "osongStation": null,
+          "jochiwonStation": "09:30",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 7,
+          "school": "09:05",
+          "osongStation": "09:20",
+          "jochiwonStation": "09:40",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 8,
+          "school": "09:40",
+          "osongStation": null,
+          "jochiwonStation": "09:50",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 9,
+          "school": "10:10",
+          "osongStation": null,
+          "jochiwonStation": "10:20",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 10,
+          "school": "10:20",
+          "osongStation": null,
+          "jochiwonStation": "10:30",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 11,
+          "school": "10:05",
+          "osongStation": "10:20",
+          "jochiwonStation": "10:40",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 12,
+          "school": "10:40",
+          "osongStation": null,
+          "jochiwonStation": "10:50",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 13,
+          "school": "11:00",
+          "osongStation": null,
+          "jochiwonStation": "11:10",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 14,
+          "school": "11:20",
+          "osongStation": null,
+          "jochiwonStation": "11:30",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 15,
+          "school": "11:05",
+          "osongStation": "11:20",
+          "jochiwonStation": "11:40",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 16,
+          "school": "11:40",
+          "osongStation": null,
+          "jochiwonStation": "11:50",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 17,
+          "school": "12:00",
+          "osongStation": null,
+          "jochiwonStation": "12:10",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 18,
+          "school": "12:20",
+          "osongStation": null,
+          "jochiwonStation": "12:30",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 19,
+          "school": "12:05",
+          "osongStation": "12:20",
+          "jochiwonStation": "12:40",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 20,
+          "school": "12:40",
+          "osongStation": null,
+          "jochiwonStation": "12:50",
+          "endPoint": "세종관(M동)"
+        },
+        {
+          "round": 21,
+          "school": "13:00",
+          "osongStation": null,
+          "jochiwonStation": "13:10",
+          "endPoint": "가온관(A동)"
+        },
+        {
+          "round": 22,
+          "school": "13:20",
+          "osongStation": null,
+          "jochiwonStation": "13:30",
+          "endPoint": "가온관(A동)"
+        },
+        {
+          "round": 23,
+          "school": "13:40",
+          "osongStation": null,
+          "jochiwonStation": "13:50",
+          "endPoint": "가온관(A동)"
+        },
+        {
+          "round": 24,
+          "school": "14:00",
+          "osongStation": null,
+          "jochiwonStation": "14:10",
+          "endPoint": "가온관(A동)"
+        },
+        {
+          "round": 25,
+          "school": "14:20",
+          "osongStation": "14:50",
+          "jochiwonStation": "14:30",
+          "endPoint": "가온관(A동)",
+          "note": "학교→조치원역→오송역 순으로 운행"
+        },
+        {
+          "round": 26,
+          "school": "14:40",
+          "osongStation": null,
+          "jochiwonStation": "14:50",
+          "endPoint": "가온관(A동)"
+        },
+        {
+          "round": 27,
+          "school": "15:00",
+          "osongStation": null,
+          "jochiwonStation": "15:10",
+          "endPoint": "가온관(A동)"
+        },
+        {
+          "round": 28,
+          "school": "15:20",
+          "osongStation": "15:50",
+          "jochiwonStation": "15:30",
+          "endPoint": "가온관(A동)",
+          "note": "학교→조치원역→오송역 순으로 운행"
+        },
+        {
+          "round": 29,
+          "school": "15:40",
+          "osongStation": null,
+          "jochiwonStation": "15:50",
+          "endPoint": "가온관(A동)"
+        },
+        {
+          "round": 30,
+          "school": "16:00",
+          "osongStation": null,
+          "jochiwonStation": "16:10",
+          "endPoint": "가온관(A동)"
+        },
+        {
+          "round": 31,
+          "school": "16:20",
+          "osongStation": "16:50",
+          "jochiwonStation": "16:30",
+          "endPoint": "가온관(A동)",
+          "note": "학교→조치원역→오송역 순으로 운행"
+        },
+        {
+          "round": 32,
+          "school": "16:40",
+          "osongStation": null,
+          "jochiwonStation": "16:50",
+          "endPoint": "가온관(A동)"
+        },
+        {
+          "round": 33,
+          "school": "17:00",
+          "osongStation": null,
+          "jochiwonStation": "17:10",
+          "endPoint": "가온관(A동)"
+        },
+        {
+          "round": 34,
+          "school": "17:20",
+          "osongStation": "17:50",
+          "jochiwonStation": "17:30",
+          "endPoint": "가온관(A동)",
+          "note": "학교→조치원역→오송역 순으로 운행"
+        },
+        {
+          "round": 35,
+          "school": "17:30",
+          "osongStation": null,
+          "jochiwonStation": "17:40",
+          "endPoint": "가온관(A동)"
+        },
+        {
+          "round": 36,
+          "school": "17:40",
+          "osongStation": null,
+          "jochiwonStation": "17:50",
+          "endPoint": "가온관(A동)"
+        },
+        {
+          "round": 37,
+          "school": "17:50",
+          "osongStation": null,
+          "jochiwonStation": "18:00",
+          "endPoint": "가온관(A동)"
+        },
+        {
+          "round": 38,
+          "school": "18:00",
+          "osongStation": null,
+          "jochiwonStation": "18:10",
+          "endPoint": "학생회관 승강장"
+        },
+        {
+          "round": 39,
+          "school": "18:20",
+          "osongStation": "18:50",
+          "jochiwonStation": null,
+          "endPoint": "학생회관 승강장",
+          "note": "학교→오송역 직행 (조치원역 미경유)",
+          "dropOffOnly": [
+            "osongStation"
+          ]
+        },
+        {
+          "round": 40,
+          "school": "18:20",
+          "osongStation": null,
+          "jochiwonStation": "18:30",
+          "endPoint": "학생회관 승강장"
+        },
+        {
+          "round": 41,
+          "school": "18:40",
+          "osongStation": null,
+          "jochiwonStation": "18:50",
+          "endPoint": "학생회관 승강장"
+        },
+        {
+          "round": 42,
+          "school": "19:00",
+          "osongStation": null,
+          "jochiwonStation": "19:10",
+          "endPoint": "학생회관 승강장"
+        },
+        {
+          "round": 43,
+          "school": "19:20",
+          "osongStation": "19:50",
+          "jochiwonStation": "19:30",
+          "endPoint": null,
+          "note": "조치원역·오송역 모두 하차만 가능. 학교 복귀 안 함 (해당 회차 운행종료)",
+          "dropOffOnly": [
+            "jochiwonStation",
+            "osongStation"
+          ]
+        }
+      ]
+    }
+}

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<meta name="theme-color" content="#0d1a1f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="통학버스">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<title>홍익대 세종캠퍼스 통학버스</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0d1a1f;
+    --bg-panel: #122530;
+    --bg-panel-2: #0f1f27;
+    --line: #23404a;
+    --text: #eaf2f1;
+    --text-dim: #8fa8ac;
+    --school: #ff7a5c;
+    --osong: #39c6c0;
+    --jochiwon: #ffb020;
+    --danger: #ff6b6b;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(circle at 20% 0%, #16303a 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Noto Sans KR', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: calc(24px + env(safe-area-inset-top)) 16px calc(60px + env(safe-area-inset-bottom));
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap{ max-width: 720px; margin: 0 auto; }
+
+  header{ text-align:center; margin-bottom: 18px; }
+  header .campus{ color: var(--text-dim); font-size: 13px; letter-spacing: .02em; margin-bottom: 4px; }
+  header h1{ font-size: 22px; font-weight: 900; margin: 0 0 14px; }
+
+  .clock-row{ display:flex; justify-content:center; align-items:baseline; gap:10px; margin-bottom: 6px; }
+  .clock{ font-family:'Space Mono', monospace; font-size: 40px; font-weight:700; letter-spacing: .02em; }
+  .date-label{ color: var(--text-dim); font-size: 13px; }
+
+  .status-line{ text-align:center; font-size: 13px; color: var(--text-dim); margin-bottom: 20px; }
+  .status-line.closed{ color: var(--danger); }
+  .status-line b{ color: var(--text); font-weight: 500; }
+
+  .origin-picker{ margin-bottom: 22px; }
+  .origin-label{ font-size: 12px; color: var(--text-dim); text-align:center; margin-bottom: 8px; }
+  .origin-tabs{
+    display:flex; gap: 6px; background: var(--bg-panel-2);
+    border: 1px solid var(--line); border-radius: 12px; padding: 4px;
+  }
+  .origin-tabs button{
+    flex:1; padding: 14px 6px; border:none; border-radius: 9px;
+    background: transparent; color: var(--text-dim);
+    font-family:'Noto Sans KR'; font-size: 14px; font-weight:700;
+    cursor:pointer; transition: background .15s, color .15s;
+  }
+  .origin-tabs button.active{ background: var(--bg-panel); color: var(--text); }
+  .origin-tabs button.active[data-key="school"]{ box-shadow: inset 0 0 0 1px var(--school); color: var(--school); }
+  .origin-tabs button.active[data-key="osongStation"]{ box-shadow: inset 0 0 0 1px var(--osong); color: var(--osong); }
+  .origin-tabs button.active[data-key="jochiwonStation"]{ box-shadow: inset 0 0 0 1px var(--jochiwon); color: var(--jochiwon); }
+  .origin-tabs button:disabled{ opacity:.3; cursor:not-allowed; }
+
+  .cards{ display:grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 10px; }
+  @media (max-width: 520px){ .cards{ grid-template-columns: 1fr; } }
+
+  .card{
+    background: var(--bg-panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 16px 16px; position: relative; overflow: hidden;
+  }
+  .card::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background: var(--accent); }
+
+  .card .dest{ font-size: 15px; font-weight: 700; margin-bottom: 2px; display:flex; align-items:center; gap:6px; color: var(--accent); }
+  .card .dest .dot{ width:7px; height:7px; border-radius:50%; background: var(--accent); }
+  .card .sub{ font-size: 11px; color: var(--text-dim); margin-bottom: 14px; }
+
+  .next-time{ font-family:'Space Mono', monospace; font-size: 34px; font-weight:700; line-height:1; }
+  .next-time .tag{ font-family:'Noto Sans KR'; font-size: 10px; font-weight:500; color: var(--text-dim); margin-left:6px; vertical-align: middle; }
+  .after-time{ margin-top: 10px; font-size: 12px; color: var(--text-dim); display:flex; align-items:center; gap:6px; }
+  .after-time .val{ font-family:'Space Mono', monospace; color: var(--text); font-size: 14px; }
+  .card .none{ font-size: 13px; color: var(--text-dim); padding-top: 4px; }
+  .approx-star{ color: var(--text-dim); }
+
+  .footnote{ font-size: 11px; color: var(--text-dim); text-align:center; margin: 0 0 22px; line-height:1.6; min-height: 1px; }
+
+  details{ background: var(--bg-panel); border: 1px solid var(--line); border-radius: 14px; padding: 4px 16px; }
+  summary{ cursor:pointer; padding: 14px 0; font-size: 14px; font-weight:700; list-style:none; display:flex; justify-content:space-between; align-items:center; color: var(--text); }
+  summary::-webkit-details-marker{ display:none; }
+  summary .arrow{ color: var(--text-dim); font-size: 12px; transition: transform .2s; }
+  details[open] summary .arrow{ transform: rotate(180deg); }
+
+  .schedule-block{ padding: 4px 0 16px; }
+  .schedule-block h3{ font-size: 12px; color: var(--text-dim); font-weight:500; margin: 14px 0 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .schedule-block h3:first-child{ border-top:none; padding-top:0; margin-top:0; }
+
+  table{ width:100%; border-collapse: collapse; font-size: 13px; }
+  th, td{ padding: 7px 4px; text-align:center; border-bottom: 1px solid var(--bg-panel-2); font-family:'Space Mono', monospace; }
+  th{ color: var(--text-dim); font-family:'Noto Sans KR'; font-weight:500; font-size: 11px; }
+  td.round{ font-family:'Noto Sans KR'; color: var(--text-dim); font-size:11px; }
+  td.empty{ color: #3a5158; }
+  td.origin-col{ color: #fff; font-weight:700; }
+  tr.is-next td{ color: #fff; }
+  tr.is-next td.round::before{ content:"▸ "; color: var(--jochiwon); }
+
+  .note-list{ font-size: 11px; color: var(--text-dim); line-height:1.7; margin: 10px 0 0; padding-left: 16px; }
+  .note-list li{ margin-bottom: 2px; }
+
+  footer{ text-align:center; margin-top: 26px; font-size: 11px; color: var(--text-dim); line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="campus">홍익대학교 세종캠퍼스</div>
+    <h1>통학버스 다음 출발</h1>
+    <div class="clock-row"><div class="clock" id="clock">--:--:--</div></div>
+    <div class="date-label" id="dateLabel"></div>
+  </header>
+
+  <div class="status-line" id="statusLine"></div>
+
+  <div class="origin-picker">
+    <div class="origin-label">어디서 타나요?</div>
+    <div class="origin-tabs" id="originTabs"></div>
+  </div>
+
+  <div class="cards" id="cards"></div>
+  <div class="footnote" id="footnote"></div>
+
+  <details id="fullScheduleDetails">
+    <summary>전체 시간표 보기 <span class="arrow">▾</span></summary>
+    <div class="schedule-block" id="fullSchedule"></div>
+  </details>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+let DATA = null;
+
+const STOP_META = {
+  school:          { label: '학교',   color: 'var(--school)' },
+  osongStation:    { label: '오송역', color: 'var(--osong)' },
+  jochiwonStation: { label: '조치원역', color: 'var(--jochiwon)' }
+};
+const STOP_ORDER = ['school', 'osongStation', 'jochiwonStation'];
+
+let selectedOrigin = 'school';
+
+function pad(n){ return n.toString().padStart(2,'0'); }
+function toMinutes(hhmm){ if(!hhmm) return null; const [h,m] = hhmm.split(':').map(Number); return h*60+m; }
+function fmtFromMinutes(min){ const h=Math.floor(min/60), m=min%60; return pad(h)+':'+pad(m); }
+function dateStr(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+
+function findActiveSchedule(now){
+  const ds = dateStr(now);
+  const s = DATA.schedules;
+  const p = s.operatingPeriod;
+  if(ds >= p.start && ds <= p.end){
+    let closed = false, closedReason = '';
+    if(p.specialClosure && ds >= p.specialClosure.start && ds <= p.specialClosure.end){
+      closed = true; closedReason = p.specialClosure.note;
+    }
+    const day = now.getDay();
+    if(day === 0 || day === 6){ closed = true; closedReason = '주말 미운행'; }
+    return { schedule: s, closed, closedReason };
+    }
+  return null;
+}
+
+function availableStops(schedule){
+  const stops = ['school'];
+  if(schedule.stops.some(s => s.includes('오송'))) stops.push('osongStation');
+  stops.push('jochiwonStation');
+  return stops;
+}
+
+function isDropOffOnly(trip, key){
+  return Array.isArray(trip.dropOffOnly) && trip.dropOffOnly.includes(key);
+}
+
+// times available for boarding at `originKey`, heading toward `destKey`
+function getDepartures(schedule, originKey, destKey, hasLoopInfo){
+  const results = [];
+  for(const t of schedule.trips){
+    if(t[originKey] === null) continue;
+    if(isDropOffOnly(t, originKey)) continue;
+    const originMin = toMinutes(t[originKey]);
+
+    if(destKey === 'school' && originKey !== 'school'){
+      if(t.school !== null && toMinutes(t.school) > originMin){
+        results.push({ round: t.round, min: originMin, exact: true });
+      } else if(hasLoopInfo && t.endPoint){
+        results.push({ round: t.round, min: originMin, exact: false });
+      }
+      continue;
+    }
+    if(t[destKey] !== null && toMinutes(t[destKey]) > originMin){
+      results.push({ round: t.round, min: originMin, exact: true });
+    }
+  }
+  return results.sort((a,b) => a.min - b.min);
+}
+
+function nextTwo(times, nowMin){
+  const upcoming = times.filter(t => t.min >= nowMin);
+  const result = [];
+  for(const t of upcoming){ if(result.length>=2) break; result.push({...t, tomorrow:false}); }
+  if(result.length < 2){
+    for(const t of times){ if(result.length>=2) break; result.push({...t, tomorrow:true}); }
+  }
+  return result;
+}
+
+function renderOriginTabs(schedule){
+  const avail = schedule ? availableStops(schedule) : ['school','jochiwonStation'];
+  if(!avail.includes(selectedOrigin)) selectedOrigin = 'school';
+  const el = document.getElementById('originTabs');
+  el.innerHTML = STOP_ORDER.map(key => {
+    const meta = STOP_META[key];
+    const isAvail = avail.includes(key);
+    const isActive = key === selectedOrigin;
+    return `<button data-key="${key}" class="${isActive?'active':''}" ${isAvail?'':'disabled'}>${meta.label}</button>`;
+  }).join('');
+  el.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.disabled) return;
+      selectedOrigin = btn.dataset.key;
+      render();
+    });
+  });
+}
+
+function renderCard(destKey, times, nowMin){
+  const meta = STOP_META[destKey];
+  const originMeta = STOP_META[selectedOrigin];
+  const two = nextTwo(times, nowMin);
+  let html = `<div class="card" style="--accent:${meta.color}">
+    <div class="dest"><span class="dot"></span>${meta.label} 방향</div>
+    <div class="sub">${originMeta.label} → ${meta.label}</div>`;
+  if(two.length === 0){
+    html += `<div class="none">오늘 남은 운행이 없습니다</div>`;
+  } else {
+    const first = two[0];
+    html += `<div class="next-time">${fmtFromMinutes(first.min)}<span class="tag">${first.tomorrow ? '내일' : first.round+'회차'}</span></div>`;
+    if(two[1]){
+      html += `<div class="after-time">그 다음 <span class="val">${fmtFromMinutes(two[1].min)}</span>${two[1].tomorrow ? ' (내일)' : ' · '+two[1].round+'회차'}</div>`;
+    }
+  }
+  html += `</div>`;
+  return html;
+}
+
+
+function renderFullSchedule(activeInfo, nowMin, isToday){
+  const container = document.getElementById('fullSchedule');
+  if(!activeInfo){
+    container.innerHTML = '<p style="font-size:13px;color:var(--text-dim)">현재 날짜에 해당하는 시간표가 없습니다.</p>';
+    return;
+  }
+  const s = activeInfo.schedule;
+  const hasOsong = s.stops.some(x => x.includes('오송'));
+
+  let nextRound = null;
+  if(isToday){
+    const times = s.trips.filter(t => t[selectedOrigin] !== null && !isDropOffOnly(t, selectedOrigin))
+      .map(t => ({round:t.round, min:toMinutes(t[selectedOrigin])}));
+    const upcoming = times.filter(t => t.min >= nowMin).sort((a,b)=>a.min-b.min);
+    if(upcoming.length) nextRound = upcoming[0].round;
+  }
+
+  let rows = '';
+  for(const t of s.trips){
+    const isNext = t.round === nextRound;
+    const cell = (key, val) => {
+      const cls = [];
+      if(!val) cls.push('empty');
+      if(key === selectedOrigin) cls.push('origin-col');
+      return `<td class="${cls.join(' ')}">${val || '—'}</td>`;
+    };
+    rows += `<tr class="${isNext ? 'is-next' : ''}">
+      <td class="round">${t.round}</td>
+      ${cell('school', t.school)}
+      ${hasOsong ? cell('osongStation', t.osongStation) : ''}
+      ${cell('jochiwonStation', t.jochiwonStation)}
+    </tr>`;
+  }
+
+  container.innerHTML = `
+    <h3>${s.title}</h3>
+    <table>
+      <thead><tr><th>회차</th><th>학교</th>${hasOsong ? '<th>오송역</th>' : ''}<th>조치원역</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${s.notes ? `<ul class="note-list">${s.notes.map(n=>`<li>${n}</li>`).join('')}</ul>` : ''}
+  `;
+}
+
+function render(){
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+
+  document.getElementById('clock').textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+  document.getElementById('dateLabel').textContent =
+    `${now.getFullYear()}. ${now.getMonth()+1}. ${now.getDate()} (${['일','월','화','수','목','금','토'][now.getDay()]})`;
+
+  const info = findActiveSchedule(now);
+  const statusEl = document.getElementById('statusLine');
+  const cardsEl = document.getElementById('cards');
+  const footnoteEl = document.getElementById('footnote');
+
+  renderOriginTabs(info ? info.schedule : null);
+
+  if(!info){
+    statusEl.innerHTML = `현재 운행 중인 통학버스 시간표가 없습니다.`;
+    statusEl.classList.add('closed');
+    cardsEl.innerHTML = ''; footnoteEl.innerHTML = '';
+    renderFullSchedule(null, nowMin, false);
+    return;
+  }
+
+  statusEl.classList.remove('closed');
+  if(info.closed){
+    statusEl.innerHTML = `오늘은 <b>${info.closedReason}</b> — 다음 정상 운행일에 다시 확인해주세요`;
+    statusEl.classList.add('closed');
+    cardsEl.innerHTML = ''; footnoteEl.innerHTML = '';
+    renderFullSchedule(info, nowMin, false);
+    return;
+  }
+
+  statusEl.innerHTML = `현재 적용 시간표 · <b>${info.schedule.title.replace('통학버스 운행 시간표','').trim()}</b>`;
+
+  const hasLoopInfo = !!info.schedule.campusInternalLoop;
+  const destinations = availableStops(info.schedule).filter(k => k !== selectedOrigin);
+
+  let cardsHtml = '';
+  for(const destKey of destinations){
+    const times = getDepartures(info.schedule, selectedOrigin, destKey, hasLoopInfo);
+    cardsHtml += renderCard(destKey, times, nowMin);
+  }
+  cardsEl.innerHTML = cardsHtml;
+
+  // footnoteEl.innerHTML = approxUsed
+  //   ? '* 표시된 시간은 해당 정류장 출발 시각이며, 학교 도착은 가온관·세종관 경유 순환 운행으로 정확한 도착 시각은 별도 안내되지 않습니다.'
+  //   : '';
+
+  renderFullSchedule(info, nowMin, true);
+}
+
+document.getElementById('footer').innerHTML = `문의 · 한화고속관광 044-715-7783<br>학생복지팀 hakbok@hongik.ac.kr`;
+
+const statusEl0 = document.getElementById('statusLine');
+statusEl0.textContent = '시간표를 불러오는 중...';
+
+fetch('hongik_sejong_school_bus.json', { cache: 'no-cache' })
+  .then((res) => {
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  })
+  .then((data) => {
+    DATA = data;
+    render();
+    setInterval(render, 1000);
+  })
+  .catch((err) => {
+    statusEl0.classList.add('closed');
+    statusEl0.innerHTML = '시간표 데이터를 불러오지 못했습니다.<br>hongik_sejong_school_bus.json 파일이 같은 폴더에 있는지, http(s) 서버로 열었는지 확인해주세요.';
+  });
+
+if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+  navigator.serviceWorker.register('service-worker.js').catch(() => {});
+}
+</script>
+</body>
+</html>
