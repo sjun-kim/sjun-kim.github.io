@@ -52,6 +52,37 @@
   .status-line.closed{ color: var(--danger); }
   .status-line b{ color: var(--text); font-weight: 500; }
 
+  .time-test{ margin: 0 0 20px; }
+  .time-test-toggle{
+    display:block; margin: 0 auto; background: var(--bg-panel); border: 1px solid var(--line);
+    color: var(--text-dim); font-family:'Noto Sans KR'; font-size: 13px; font-weight:700;
+    border-radius: 10px; cursor: pointer; padding: 10px 16px;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .time-test-toggle:hover{ color: var(--text); border-color: var(--jochiwon); }
+  .time-test-panel{
+    margin-top: 10px; background: var(--bg-panel-2); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px; display:flex; flex-wrap:wrap; gap: 8px;
+    align-items:center; justify-content:center;
+  }
+  .time-test-panel[hidden]{ display:none; }
+  .time-test-panel input{
+    background: var(--bg-panel); border: 1px solid var(--line); border-radius: 8px;
+    color: var(--text); font-family:'Space Mono', monospace; font-size: 13px;
+    padding: 7px 8px;
+  }
+  .time-test-panel button{
+    border: none; border-radius: 8px; padding: 8px 12px;
+    font-family:'Noto Sans KR'; font-size: 12px; font-weight:700; cursor:pointer;
+  }
+  .time-test-panel .apply-btn{ background: var(--jochiwon); color: #1a1200; }
+  .time-test-panel .reset-btn{ background: transparent; color: var(--text-dim); border: 1px solid var(--line); }
+  .test-badge{
+    font-family:'Noto Sans KR'; font-size: 11px; font-weight:700; color: #1a1200;
+    background: var(--jochiwon); border-radius: 6px; padding: 2px 7px; margin-left: 8px;
+    vertical-align: middle;
+  }
+
   .origin-picker{ margin-bottom: 22px; }
   .origin-label{ font-size: 12px; color: var(--text-dim); text-align:center; margin-bottom: 8px; }
   .origin-tabs{
@@ -90,6 +121,16 @@
   .card .none{ font-size: 13px; color: var(--text-dim); padding-top: 4px; }
   .approx-star{ color: var(--text-dim); }
 
+  .notify-row{
+    display:flex; align-items:center; gap: 6px; margin-top: 14px; padding-top: 12px;
+    border-top: 1px solid var(--bg-panel-2); font-size: 12px; color: var(--text-dim);
+    cursor: pointer; user-select: none;
+  }
+  .notify-row input{ accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+  .notify-row input:disabled{ cursor: not-allowed; }
+  .notify-row.active{ color: var(--text); }
+  .notify-row .notify-sub{ font-size: 10px; color: var(--text-dim); display:block; }
+
   .footnote{ font-size: 11px; color: var(--text-dim); text-align:center; margin: 0 0 22px; line-height:1.6; min-height: 1px; }
 
   details{ background: var(--bg-panel); border: 1px solid var(--line); border-radius: 14px; padding: 4px 16px; }
@@ -122,9 +163,19 @@
   <header>
     <div class="campus">홍익대학교 세종캠퍼스</div>
     <h1>통학버스 다음 출발</h1>
-    <div class="clock-row"><div class="clock" id="clock">--:--:--</div></div>
+    <div class="clock-row"><div class="clock" id="clock">--:--:--</div><span id="testBadge"></span></div>
     <div class="date-label" id="dateLabel"></div>
   </header>
+
+  <div class="time-test">
+    <button class="time-test-toggle" id="timeTestToggle">🕒 시간 직접 입력해서 테스트</button>
+    <div class="time-test-panel" id="timeTestPanel" hidden>
+      <input type="date" id="overrideDate">
+      <input type="time" id="overrideTime">
+      <button class="apply-btn" id="applyOverrideBtn">확인</button>
+      <button class="reset-btn" id="resetOverrideBtn">현재 시간으로</button>
+    </div>
+  </div>
 
   <div class="status-line" id="statusLine"></div>
 
@@ -155,6 +206,81 @@ const STOP_META = {
 const STOP_ORDER = ['school', 'osongStation', 'jochiwonStation'];
 
 let selectedOrigin = 'school';
+let customNow = null; // Date | null — 테스트용으로 고정한 시각. null이면 실시간.
+
+const LEAD_MINUTES = 5;
+let notifyOn = {};          // { [destKey]: boolean }
+let notifyScheduled = {};   // { [destKey]: { round, min, timeoutId } }
+
+function getNow(){
+  return customNow ? new Date(customNow) : new Date();
+}
+
+function clearNotifyTimer(destKey){
+  const s = notifyScheduled[destKey];
+  if(s){ clearTimeout(s.timeoutId); delete notifyScheduled[destKey]; }
+}
+
+function clearAllNotifyTimers(){
+  Object.keys(notifyScheduled).forEach(clearNotifyTimer);
+}
+
+async function requestNotifyPermission(){
+  if(!('Notification' in window)){
+    alert('이 브라우저는 알림 기능을 지원하지 않아요.');
+    return false;
+  }
+  if(Notification.permission === 'denied'){
+    alert('알림이 차단되어 있어요. 브라우저/기기 설정에서 이 사이트의 알림 권한을 허용해주세요.');
+    return false;
+  }
+  if(Notification.permission === 'granted') return true;
+  const result = await Notification.requestPermission();
+  return result === 'granted';
+}
+
+function fireNotification(destKey, dep){
+  const meta = STOP_META[destKey];
+  const originMeta = STOP_META[selectedOrigin];
+  const title = `${meta.label}행 버스 ${LEAD_MINUTES}분 전`;
+  const body = `${originMeta.label} 출발 ${fmtFromMinutes(dep.min)} · ${dep.round}회차`;
+  const options = { body, icon: 'icon-192.png', badge: 'icon-192.png', tag: 'bus-' + destKey };
+  if(navigator.serviceWorker && navigator.serviceWorker.ready){
+    navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options)).catch(() => {
+      new Notification(title, options);
+    });
+  } else {
+    new Notification(title, options);
+  }
+}
+
+// times 목록 중 오늘 남은 것 기준으로, 필요하면 (재)예약한다.
+function scheduleNotifyForDest(destKey, times, nowMin, now){
+  if(!notifyOn[destKey] || customNow){
+    clearNotifyTimer(destKey);
+    return;
+  }
+  const next = times.find(t => t.min >= nowMin);
+  if(!next){ clearNotifyTimer(destKey); return; }
+
+  const existing = notifyScheduled[destKey];
+  if(existing && existing.round === next.round && existing.min === next.min) return; // 이미 예약됨
+
+  clearNotifyTimer(destKey);
+
+  const target = new Date(now);
+  target.setHours(0, 0, 0, 0);
+  target.setMinutes(Math.max(next.min - LEAD_MINUTES, 0));
+  let delay = target.getTime() - now.getTime();
+  if(delay < 0) delay = 0;
+
+  const timeoutId = setTimeout(() => {
+    fireNotification(destKey, next);
+    delete notifyScheduled[destKey];
+  }, delay);
+
+  notifyScheduled[destKey] = { round: next.round, min: next.min, timeoutId };
+}
 
 function pad(n){ return n.toString().padStart(2,'0'); }
 function toMinutes(hhmm){ if(!hhmm) return null; const [h,m] = hhmm.split(':').map(Number); return h*60+m; }
@@ -234,7 +360,10 @@ function renderOriginTabs(schedule){
   el.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', () => {
       if(btn.disabled) return;
+      if(btn.dataset.key === selectedOrigin) return;
       selectedOrigin = btn.dataset.key;
+      notifyOn = {};
+      clearAllNotifyTimers();
       render();
     });
   });
@@ -256,6 +385,12 @@ function renderCard(destKey, times, nowMin){
       html += `<div class="after-time">그 다음 <span class="val">${fmtFromMinutes(two[1].min)}</span>${two[1].tomorrow ? ' (내일)' : ' · '+two[1].round+'회차'}</div>`;
     }
   }
+  const isOn = !!notifyOn[destKey];
+  const disabled = !!customNow;
+  html += `<label class="notify-row ${isOn?'active':''}">
+    <input type="checkbox" class="notify-checkbox" data-dest="${destKey}" ${isOn?'checked':''} ${disabled?'disabled':''}>
+    <span>🔔 출발 ${LEAD_MINUTES}분 전 알림받기${disabled ? '<span class="notify-sub">테스트 시간에서는 사용할 수 없어요</span>' : ''}</span>
+  </label>`;
   html += `</div>`;
   return html;
 }
@@ -306,12 +441,13 @@ function renderFullSchedule(activeInfo, nowMin, isToday){
 }
 
 function render(){
-  const now = new Date();
+  const now = getNow();
   const nowMin = now.getHours()*60 + now.getMinutes();
 
   document.getElementById('clock').textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
   document.getElementById('dateLabel').textContent =
     `${now.getFullYear()}. ${now.getMonth()+1}. ${now.getDate()} (${['일','월','화','수','목','금','토'][now.getDay()]})`;
+  document.getElementById('testBadge').textContent = customNow ? 'TEST' : '';
 
   const info = findActiveSchedule(now);
   const statusEl = document.getElementById('statusLine');
@@ -324,6 +460,7 @@ function render(){
     statusEl.innerHTML = `현재 운행 중인 통학버스 시간표가 없습니다.`;
     statusEl.classList.add('closed');
     cardsEl.innerHTML = ''; footnoteEl.innerHTML = '';
+    clearAllNotifyTimers();
     renderFullSchedule(null, nowMin, false);
     return;
   }
@@ -333,6 +470,7 @@ function render(){
     statusEl.innerHTML = `오늘은 <b>${info.closedReason}</b> — 다음 정상 운행일에 다시 확인해주세요`;
     statusEl.classList.add('closed');
     cardsEl.innerHTML = ''; footnoteEl.innerHTML = '';
+    clearAllNotifyTimers();
     renderFullSchedule(info, nowMin, false);
     return;
   }
@@ -343,11 +481,34 @@ function render(){
   const destinations = availableStops(info.schedule).filter(k => k !== selectedOrigin);
 
   let cardsHtml = '';
+  const destTimes = {};
   for(const destKey of destinations){
     const times = getDepartures(info.schedule, selectedOrigin, destKey, hasLoopInfo);
+    destTimes[destKey] = times;
     cardsHtml += renderCard(destKey, times, nowMin);
   }
   cardsEl.innerHTML = cardsHtml;
+
+  cardsEl.querySelectorAll('.notify-checkbox').forEach(cb => {
+    cb.addEventListener('change', async () => {
+      const destKey = cb.dataset.dest;
+      if(cb.checked){
+        const granted = await requestNotifyPermission();
+        if(!granted){ cb.checked = false; return; }
+        notifyOn[destKey] = true;
+      } else {
+        notifyOn[destKey] = false;
+        clearNotifyTimer(destKey);
+      }
+      render();
+    });
+  });
+
+  for(const destKey of destinations){
+    scheduleNotifyForDest(destKey, destTimes[destKey], nowMin, now);
+  }
+  // 현재 표시되지 않는(다른 출발지 선택 시) 대상의 알림은 정리
+  Object.keys(notifyScheduled).forEach(k => { if(!destinations.includes(k)) clearNotifyTimer(k); });
 
   // footnoteEl.innerHTML = approxUsed
   //   ? '* 표시된 시간은 해당 정류장 출발 시각이며, 학교 도착은 가온관·세종관 경유 순환 운행으로 정확한 도착 시각은 별도 안내되지 않습니다.'
@@ -357,6 +518,37 @@ function render(){
 }
 
 document.getElementById('footer').innerHTML = `문의 · 한화고속관광 044-715-7783<br>학생복지팀 hakbok@hongik.ac.kr`;
+
+const timeTestToggle = document.getElementById('timeTestToggle');
+const timeTestPanel = document.getElementById('timeTestPanel');
+const overrideDateInput = document.getElementById('overrideDate');
+const overrideTimeInput = document.getElementById('overrideTime');
+
+timeTestToggle.addEventListener('click', () => {
+  const opening = timeTestPanel.hidden;
+  timeTestPanel.hidden = !opening;
+  if(opening){
+    const base = getNow();
+    overrideDateInput.value = dateStr(base);
+    overrideTimeInput.value = pad(base.getHours())+':'+pad(base.getMinutes());
+  }
+});
+
+document.getElementById('applyOverrideBtn').addEventListener('click', () => {
+  const dateVal = overrideDateInput.value;
+  const timeVal = overrideTimeInput.value;
+  if(!timeVal){ overrideTimeInput.focus(); return; }
+  const [y, mo, da] = (dateVal || dateStr(new Date())).split('-').map(Number);
+  const [h, mi] = timeVal.split(':').map(Number);
+  customNow = new Date(y, mo - 1, da, h, mi, 0);
+  render();
+});
+
+document.getElementById('resetOverrideBtn').addEventListener('click', () => {
+  customNow = null;
+  timeTestPanel.hidden = true;
+  render();
+});
 
 const statusEl0 = document.getElementById('statusLine');
 statusEl0.textContent = '시간표를 불러오는 중...';

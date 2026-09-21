@@ -2,7 +2,7 @@
   "name": "홍익대 세종캠퍼스 통학버스",
   "short_name": "통학버스",
   "description": "홍익대학교 세종캠퍼스 통학버스 다음 출발 시간 안내",
-  "start_url": "./hongik_bus_app.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

@@ -1,6 +1,6 @@
-const CACHE_NAME = 'hongik-bus-v2';
+const CACHE_NAME = 'hongik-bus-v3';
 const ASSETS = [
-  './hongik_bus_app.html',
+  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
