@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<meta name="theme-color" content="#0d1a1f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="통학버스">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<title>홍익대 세종캠퍼스 통학버스</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0d1a1f;
+    --bg-panel: #122530;
+    --bg-panel-2: #0f1f27;
+    --line: #23404a;
+    --text: #eaf2f1;
+    --text-dim: #8fa8ac;
+    --school: #ff7a5c;
+    --osong: #39c6c0;
+    --jochiwon: #ffb020;
+    --danger: #ff6b6b;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(circle at 20% 0%, #16303a 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Noto Sans KR', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: calc(24px + env(safe-area-inset-top)) 16px calc(60px + env(safe-area-inset-bottom));
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap{ max-width: 720px; margin: 0 auto; }
+
+  header{ text-align:center; margin-bottom: 18px; }
+  header .campus{ color: var(--text-dim); font-size: 13px; letter-spacing: .02em; margin-bottom: 4px; }
+  header h1{ font-size: 22px; font-weight: 900; margin: 0 0 14px; }
+
+  .clock-row{ display:flex; justify-content:center; align-items:baseline; gap:10px; margin-bottom: 6px; }
+  .clock{ font-family:'Space Mono', monospace; font-size: 40px; font-weight:700; letter-spacing: .02em; }
+  .date-label{ color: var(--text-dim); font-size: 13px; }
+
+  .status-line{ text-align:center; font-size: 13px; color: var(--text-dim); margin-bottom: 20px; }
+  .status-line.closed{ color: var(--danger); }
+  .status-line b{ color: var(--text); font-weight: 500; }
+
+  .time-test{ margin: 0 0 20px; }
+  .time-test-toggle{
+    display:block; margin: 0 auto; background: var(--bg-panel); border: 1px solid var(--line);
+    color: var(--text-dim); font-family:'Noto Sans KR'; font-size: 13px; font-weight:700;
+    border-radius: 10px; cursor: pointer; padding: 10px 16px;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .time-test-toggle:hover{ color: var(--text); border-color: var(--jochiwon); }
+  .time-test-panel{
+    margin-top: 10px; background: var(--bg-panel-2); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px; display:flex; flex-wrap:wrap; gap: 8px;
+    align-items:center; justify-content:center;
+  }
+  .time-test-panel[hidden]{ display:none; }
+  .time-test-panel input{
+    background: var(--bg-panel); border: 1px solid var(--line); border-radius: 8px;
+    color: var(--text); font-family:'Space Mono', monospace; font-size: 13px;
+    padding: 7px 8px;
+  }
+  .time-test-panel button{
+    border: none; border-radius: 8px; padding: 8px 12px;
+    font-family:'Noto Sans KR'; font-size: 12px; font-weight:700; cursor:pointer;
+  }
+  .time-test-panel .apply-btn{ background: var(--jochiwon); color: #1a1200; }
+  .time-test-panel .reset-btn{ background: transparent; color: var(--text-dim); border: 1px solid var(--line); }
+  .test-badge{
+    font-family:'Noto Sans KR'; font-size: 11px; font-weight:700; color: #1a1200;
+    background: var(--jochiwon); border-radius: 6px; padding: 2px 7px; margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .origin-picker{ margin-bottom: 22px; }
+  .origin-label{ font-size: 12px; color: var(--text-dim); text-align:center; margin-bottom: 8px; }
+  .origin-tabs{
+    display:flex; gap: 6px; background: var(--bg-panel-2);
+    border: 1px solid var(--line); border-radius: 12px; padding: 4px;
+  }
+  .origin-tabs button{
+    flex:1; padding: 14px 6px; border:none; border-radius: 9px;
+    background: transparent; color: var(--text-dim);
+    font-family:'Noto Sans KR'; font-size: 14px; font-weight:700;
+    cursor:pointer; transition: background .15s, color .15s;
+  }
+  .origin-tabs button.active{ background: var(--bg-panel); color: var(--text); }
+  .origin-tabs button.active[data-key="school"]{ box-shadow: inset 0 0 0 1px var(--school); color: var(--school); }
+  .origin-tabs button.active[data-key="osongStation"]{ box-shadow: inset 0 0 0 1px var(--osong); color: var(--osong); }
+  .origin-tabs button.active[data-key="jochiwonStation"]{ box-shadow: inset 0 0 0 1px var(--jochiwon); color: var(--jochiwon); }
+  .origin-tabs button:disabled{ opacity:.3; cursor:not-allowed; }
+
+  .cards{ display:grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 10px; }
+  @media (max-width: 520px){ .cards{ grid-template-columns: 1fr; } }
+
+  .card{
+    background: var(--bg-panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 16px 16px; position: relative; overflow: hidden;
+  }
+  .card::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background: var(--accent); }
+
+  .card .dest{ font-size: 15px; font-weight: 700; margin-bottom: 2px; display:flex; align-items:center; gap:6px; color: var(--accent); }
+  .card .dest .dot{ width:7px; height:7px; border-radius:50%; background: var(--accent); }
+  .card .sub{ font-size: 11px; color: var(--text-dim); margin-bottom: 14px; }
+
+  .next-time{ font-family:'Space Mono', monospace; font-size: 34px; font-weight:700; line-height:1; }
+  .next-time .tag{ font-family:'Noto Sans KR'; font-size: 10px; font-weight:500; color: var(--text-dim); margin-left:6px; vertical-align: middle; }
+  .after-time{ margin-top: 10px; font-size: 12px; color: var(--text-dim); display:flex; align-items:center; gap:6px; }
+  .after-time .val{ font-family:'Space Mono', monospace; color: var(--text); font-size: 14px; }
+  .card .none{ font-size: 13px; color: var(--text-dim); padding-top: 4px; }
+  .approx-star{ color: var(--text-dim); }
+
+  .notify-row{
+    display:flex; align-items:center; gap: 6px; margin-top: 14px; padding-top: 12px;
+    border-top: 1px solid var(--bg-panel-2); font-size: 12px; color: var(--text-dim);
+    cursor: pointer; user-select: none;
+  }
+  .notify-row input{ accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+  .notify-row input:disabled{ cursor: not-allowed; }
+  .notify-row.active{ color: var(--text); }
+  .notify-row .notify-sub{ font-size: 10px; color: var(--text-dim); display:block; }
+
+  .footnote{ font-size: 11px; color: var(--text-dim); text-align:center; margin: 0 0 22px; line-height:1.6; min-height: 1px; }
+
+  .card{ cursor: pointer; transition: border-color .15s; }
+  .card:hover{ border-color: var(--accent); }
+  .card .expand-hint{
+    display:flex; align-items:center; justify-content:center; gap:4px;
+    margin-top: 12px; font-size: 11px; color: var(--text-dim);
+  }
+  .card .expand-hint .chev{ display:inline-block; transform: rotate(-90deg); }
+
+  /* 당일 시간표 임시 창(모달) */
+  body.modal-open{ overflow: hidden; }
+  .modal-overlay{
+    position: fixed; inset: 0; z-index: 100; background: rgba(4,10,13,.68);
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .modal-overlay[hidden]{ display:none; }
+  .modal-sheet{
+    position: relative; width: 100%; max-width: 520px; max-height: 78vh;
+    display:flex; flex-direction:column; overflow:hidden;
+    background: var(--bg-panel); border: 1px solid var(--line); border-bottom: none;
+    border-radius: 18px 18px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,.45);
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: sheet-in .2s ease-out;
+  }
+  .modal-sheet::before{ content:""; position:absolute; left:0; right:0; top:0; height:3px; background: var(--accent); }
+  @keyframes sheet-in{ from{ transform: translateY(24px); opacity:0; } to{ transform:none; opacity:1; } }
+  @media (min-width: 600px){
+    .modal-overlay{ align-items:center; padding: 24px; }
+    .modal-sheet{ border-bottom: 1px solid var(--line); border-radius: 18px; max-height: 80vh; padding-bottom: 0; }
+  }
+  .modal-head{
+    display:flex; justify-content:space-between; align-items:flex-start; gap: 12px;
+    padding: 20px 18px 12px; border-bottom: 1px solid var(--bg-panel-2);
+  }
+  .modal-title{ font-size: 16px; font-weight:700; color: var(--accent); display:flex; align-items:center; gap:6px; }
+  .modal-title .dot{ width:7px; height:7px; border-radius:50%; background: var(--accent); }
+  .modal-sub{ font-size: 11px; color: var(--text-dim); margin-top: 4px; line-height: 1.5; }
+  .modal-close{
+    flex: none; width: 34px; height: 34px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--bg-panel-2); color: var(--text-dim); font-size: 15px;
+  }
+  .modal-close:hover{ color: var(--text); }
+  .modal-body{
+    overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    padding: 4px 18px 16px;
+  }
+  .modal-body .none{ padding: 18px 0; }
+
+  .day-row{
+    display:flex; align-items:baseline; gap: 10px; padding: 10px 2px;
+    border-bottom: 1px solid var(--bg-panel-2);
+  }
+  .day-row .t{ font-family:'Space Mono', monospace; font-size: 17px; font-weight:700; min-width: 58px; }
+  .day-row .meta{ font-size: 11px; color: var(--text-dim); }
+  .day-row.past{ opacity: .35; }
+  .day-row.next .t{ color: var(--accent); }
+  .day-row.next .badge{
+    margin-left: auto; font-size: 10px; font-weight: 700; color: #1a1200;
+    background: var(--accent); border-radius: 6px; padding: 2px 7px;
+  }
+
+  footer{ text-align:center; margin-top: 26px; font-size: 11px; color: var(--text-dim); line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="campus">홍익대학교 세종캠퍼스</div>
+    <h1>통학버스 다음 출발</h1>
+    <div class="clock-row"><div class="clock" id="clock">--:--:--</div><span id="testBadge"></span></div>
+    <div class="date-label" id="dateLabel"></div>
+  </header>
+
+  <div class="time-test">
+    <button class="time-test-toggle" id="timeTestToggle">시간 직접 입력</button>
+    <div class="time-test-panel" id="timeTestPanel" hidden>
+      <input type="date" id="overrideDate">
+      <input type="time" id="overrideTime">
+      <button class="apply-btn" id="applyOverrideBtn">확인</button>
+      <button class="reset-btn" id="resetOverrideBtn">현재 시간으로</button>
+    </div>
+  </div>
+
+  <div class="status-line" id="statusLine"></div>
+
+  <div class="origin-picker">
+    <div class="origin-label">어디서 타나요?</div>
+    <div class="origin-tabs" id="originTabs"></div>
+  </div>
+
+  <div class="cards" id="cards"></div>
+  <div class="footnote" id="footnote"></div>
+
+
+  <footer id="footer"></footer>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal-sheet" id="modalSheet" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-sub" id="modalSub"></div>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="닫기">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+let DATA = null;
+
+// 시간표 JSON을 불러오지 못했을 때 화면 테스트용으로 쓰는 임시 데이터.
+// 08~21시 매시 정각 학교 출발, 짝수 시각은 학교→오송역→조치원역, 홀수 시각은 학교→조치원역→오송역 순.
+function buildFallbackData(){
+  const trips = [];
+  for(let h = 8; h <= 21; h++){
+    const hh = String(h).padStart(2, '0');
+    const even = h % 2 === 0;
+    trips.push({
+      school: `${hh}:00`,
+      osongStation: even ? `${hh}:20` : `${hh}:30`,
+      jochiwonStation: even ? `${hh}:35` : `${hh}:10`,
+      endPoint: h % 3 === 0 ? '세종관(M동)' : '가온관(A동)'
+    });
+  }
+  return {
+    isFallback: true,
+    schedules: {
+      id: 'fallback',
+      title: '임시 테스트 데이터',
+      operatingPeriod: { start: '2000-01-01', end: '2099-12-31' },
+      campusInternalLoop: { route: '조치원역 → 가온관(A동) → 세종관(M동)' },
+      stops: ['학교(학생회관 승강장)', '오송역 3번출구 투어버스 승차장', '조치원역(메가박스 앞 버스승강장)'],
+      trips
+    }
+  };
+}
+
+const STOP_META = {
+  school:          { label: '학교',   originLabel: '학생회관', color: 'var(--school)' },
+  osongStation:    { label: '오송역', originLabel: '오송역',   color: 'var(--osong)' },
+  jochiwonStation: { label: '조치원역', originLabel: '조치원역', color: 'var(--jochiwon)' }
+};
+const STOP_ORDER = ['school', 'osongStation', 'jochiwonStation'];
+
+// 정류장 사이 이동 시간(분). 예상 도착 시각 계산에 쓴다.
+const TRAVEL_MIN = {
+  'school|jochiwonStation': 10,
+  'osongStation|jochiwonStation': 20,
+  'school|osongStation': 15
+};
+function travelMinutes(a, b){
+  return TRAVEL_MIN[`${a}|${b}`] ?? TRAVEL_MIN[`${b}|${a}`] ?? 0;
+}
+
+let selectedOrigin = 'school';
+let customNow = null; // Date | null — 테스트용으로 고정한 시각. null이면 실시간.
+
+const LEAD_MINUTES = 1;
+let notifyOn = {};          // { [destKey]: boolean }
+let notifyScheduled = {};   // { [destKey]: { min, timeoutId, fired } }
+let modalDest = null;       // 시간표 창이 열려 있는 카드의 destKey
+let lastFocusEl = null;
+let scrollToNextPending = false;
+
+function getNow(){
+  return customNow ? new Date(customNow) : new Date();
+}
+
+function clearNotifyTimer(destKey){
+  const s = notifyScheduled[destKey];
+  if(s){ clearTimeout(s.timeoutId); delete notifyScheduled[destKey]; }
+}
+
+function clearAllNotifyTimers(){
+  Object.keys(notifyScheduled).forEach(clearNotifyTimer);
+}
+
+async function requestNotifyPermission(){
+  if(!('Notification' in window)){
+    alert('이 브라우저는 알림 기능을 지원하지 않아요.');
+    return false;
+  }
+  if(Notification.permission === 'denied'){
+    alert('알림이 차단되어 있어요. 브라우저/기기 설정에서 이 사이트의 알림 권한을 허용해주세요.');
+    return false;
+  }
+  if(Notification.permission === 'granted') return true;
+  const result = await Notification.requestPermission();
+  return result === 'granted';
+}
+
+function fireNotification(destKey, dep){
+  const meta = STOP_META[destKey];
+  const originMeta = STOP_META[selectedOrigin];
+  const title = `${meta.label}행 버스 ${LEAD_MINUTES}분 전`;
+  const arrival = arrivalNoteFor(destKey, dep);
+  const body = `${originMeta.originLabel} 출발 ${fmtFromMinutes(dep.min)}${arrival ? ' · ' + arrival : ''}`;
+  const options = { body, icon: 'icon-192.png', badge: 'icon-192.png', tag: 'bus-' + destKey };
+  if(navigator.serviceWorker && navigator.serviceWorker.ready){
+    navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options)).catch(() => {
+      new Notification(title, options);
+    });
+  } else {
+    new Notification(title, options);
+  }
+}
+
+// times 목록 중 오늘 남은 것 기준으로, 필요하면 (재)예약한다.
+function scheduleNotifyForDest(destKey, times, nowMin, now){
+  if(!notifyOn[destKey] || customNow){
+    clearNotifyTimer(destKey);
+    return;
+  }
+  const next = times.find(t => t.min >= nowMin);
+  if(!next){ clearNotifyTimer(destKey); return; }
+
+  const existing = notifyScheduled[destKey];
+  if(existing && existing.min === next.min) return; // 이미 예약됨(또는 이미 발송됨)
+
+  clearNotifyTimer(destKey);
+
+  const target = new Date(now);
+  target.setHours(0, 0, 0, 0);
+  target.setMinutes(Math.max(next.min - LEAD_MINUTES, 0));
+  let delay = target.getTime() - now.getTime();
+  if(delay < 0) delay = 0;
+
+  const entry = { min: next.min, timeoutId: null, fired: false };
+  entry.timeoutId = setTimeout(() => {
+    fireNotification(destKey, next);
+    entry.fired = true; // 지우지 않고 남겨둬서, 같은 출발 시각에 다시 예약되지 않게 한다
+  }, delay);
+  notifyScheduled[destKey] = entry;
+}
+
+function pad(n){ return n.toString().padStart(2,'0'); }
+function toMinutes(hhmm){ if(!hhmm) return null; const [h,m] = hhmm.split(':').map(Number); return h*60+m; }
+function fmtFromMinutes(min){ const h=Math.floor(min/60), m=min%60; return pad(h)+':'+pad(m); }
+function dateStr(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+
+function findActiveSchedule(now){
+  const ds = dateStr(now);
+  const s = DATA.schedules;
+  const p = s.operatingPeriod;
+  if(ds >= p.start && ds <= p.end){
+    let closed = false, closedReason = '';
+    if(p.specialClosure && ds >= p.specialClosure.start && ds <= p.specialClosure.end){
+      closed = true; closedReason = p.specialClosure.note;
+    }
+    const day = now.getDay();
+    if((day === 0 || day === 6) && !DATA.isFallback){ closed = true; closedReason = '주말 미운행'; }
+    return { schedule: s, closed, closedReason };
+    }
+  return null;
+}
+
+function availableStops(schedule){
+  const stops = ['school'];
+  if(schedule.stops.some(s => s.includes('오송'))) stops.push('osongStation');
+  stops.push('jochiwonStation');
+  return stops;
+}
+
+function isDropOffOnly(trip, key){
+  return Array.isArray(trip.dropOffOnly) && trip.dropOffOnly.includes(key);
+}
+
+// times available for boarding at `originKey`, heading toward `destKey`
+// 예상 도착 시각(분).
+// - 시간표에 목적지 시각이 이미 있으면 그 시각을 그대로 쓴다.
+// - 없으면(학교 도착 등) 출발지 이후 마지막으로 들르는 정류장 시각 + 그 정류장에서 목적지까지 이동시간으로 계산한다.
+function estimateArrivalMin(t, originKey, destKey, originMin){
+  if(t[destKey] != null && toMinutes(t[destKey]) > originMin){
+    return toMinutes(t[destKey]);
+  }
+  let baseKey = originKey, baseMin = originMin;
+  for(const k of STOP_ORDER){
+    if(k === originKey || k === destKey || t[k] == null) continue;
+    const m = toMinutes(t[k]);
+    if(m > baseMin){ baseKey = k; baseMin = m; }
+  }
+  return baseMin + travelMinutes(baseKey, destKey);
+}
+
+function getDepartures(schedule, originKey, destKey, hasLoopInfo){
+  const results = [];
+  for(const t of schedule.trips){
+    if(t[originKey] === null) continue;
+    if(isDropOffOnly(t, originKey)) continue;
+    const originMin = toMinutes(t[originKey]);
+
+    if(destKey === 'school' && originKey !== 'school'){
+      if(t.school !== null && toMinutes(t.school) > originMin){
+        results.push({ min: originMin, exact: true, endPoint: t.endPoint, arriveMin: estimateArrivalMin(t, originKey, destKey, originMin) });
+      } else if(hasLoopInfo && t.endPoint){
+        results.push({ min: originMin, exact: false, endPoint: t.endPoint, arriveMin: estimateArrivalMin(t, originKey, destKey, originMin) });
+      }
+      continue;
+    }
+    if(t[destKey] !== null && toMinutes(t[destKey]) > originMin){
+      results.push({ min: originMin, exact: true, arriveMin: estimateArrivalMin(t, originKey, destKey, originMin) });
+    }
+  }
+  return results.sort((a,b) => a.min - b.min);
+}
+
+function nextTwo(times, nowMin){
+  const upcoming = times.filter(t => t.min >= nowMin);
+  const result = [];
+  for(const t of upcoming){ if(result.length>=2) break; result.push({...t, tomorrow:false}); }
+  if(result.length < 2){
+    for(const t of times){ if(result.length>=2) break; result.push({...t, tomorrow:true}); }
+  }
+  return result;
+}
+
+function renderOriginTabs(schedule){
+  const avail = schedule ? availableStops(schedule) : ['school','jochiwonStation'];
+  if(!avail.includes(selectedOrigin)) selectedOrigin = 'school';
+  const el = document.getElementById('originTabs');
+  el.innerHTML = STOP_ORDER.map(key => {
+    const meta = STOP_META[key];
+    const isAvail = avail.includes(key);
+    const isActive = key === selectedOrigin;
+    return `<button data-key="${key}" class="${isActive?'active':''}" ${isAvail?'':'disabled'}>${meta.label}</button>`;
+  }).join('');
+  el.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.disabled) return;
+      if(btn.dataset.key === selectedOrigin) return;
+      selectedOrigin = btn.dataset.key;
+      notifyOn = {};
+      hideModal();
+      clearAllNotifyTimers();
+      render();
+    });
+  });
+}
+
+const DOW = ['일','월','화','수','목','금','토'];
+
+// '가온관(A동)' -> '(A동)', '학생회관 승강장' -> '(학생회관)'
+function shortEndPoint(endPoint){
+  if(!endPoint) return '';
+  const m = endPoint.match(/\(([^)]+)\)/);
+  return m ? `(${m[1]})` : `(${endPoint.replace(/\s*승강장$/, '')})`;
+}
+
+function arrivalNoteFor(destKey, t){
+  if(t.arriveMin == null) return '';
+  const place = destKey === 'school' ? shortEndPoint(t.endPoint) : '';
+  return `예상 ${fmtFromMinutes(t.arriveMin % 1440)} 도착${place ? ' ' + place : ''}`;
+}
+
+function buildDayRows(destKey, times, nowMin){
+  if(times.length === 0){
+    return `<div class="none">이 날은 운행 정보가 없습니다</div>`;
+  }
+  const nextIdx = times.findIndex(t => t.min >= nowMin);
+  return times.map((t, i) => {
+    const cls = ['day-row'];
+    if(t.min < nowMin) cls.push('past');
+    if(i === nextIdx) cls.push('next');
+    return `<div class="${cls.join(' ')}" ${i === nextIdx ? 'data-next="1"' : ''}>
+      <span class="t">${fmtFromMinutes(t.min)}</span>
+      <span class="meta">${arrivalNoteFor(destKey, t)}</span>
+      ${i === nextIdx ? '<span class="badge">다음</span>' : ''}
+    </div>`;
+  }).join('');
+}
+
+const modalOverlay = document.getElementById('modalOverlay');
+const modalSheet = document.getElementById('modalSheet');
+const modalTitle = document.getElementById('modalTitle');
+const modalSub = document.getElementById('modalSub');
+const modalBody = document.getElementById('modalBody');
+const modalClose = document.getElementById('modalClose');
+
+function hideModal(){
+  const wasOpen = !modalOverlay.hidden;
+  modalDest = null;
+  modalOverlay.hidden = true;
+  modalBody.dataset.sig = '';
+  document.body.classList.remove('modal-open');
+  if(wasOpen && lastFocusEl && lastFocusEl.focus){ lastFocusEl.focus(); }
+  lastFocusEl = null;
+}
+
+// 매초 호출되므로, 내용이 바뀐 경우에만 목록을 교체해 스크롤 위치를 유지한다.
+function updateModal(destKey, times, nowMin, now){
+  const meta = STOP_META[destKey];
+  const originMeta = STOP_META[selectedOrigin];
+  const opening = modalOverlay.hidden;
+  if(opening){
+    lastFocusEl = document.activeElement;
+    modalOverlay.hidden = false;
+    document.body.classList.add('modal-open');
+    modalBody.dataset.sig = '';
+  }
+  modalSheet.style.setProperty('--accent', meta.color);
+  modalTitle.innerHTML = `<span class="dot"></span>${meta.label} 방향`;
+  modalSub.textContent = `${originMeta.originLabel} → ${meta.label} · ${now.getMonth()+1}월 ${now.getDate()}일 (${DOW[now.getDay()]}) 시간표`;
+
+  const rowsHtml = buildDayRows(destKey, times, nowMin);
+  if(modalBody.dataset.sig !== rowsHtml){
+    const prevScroll = modalBody.scrollTop;
+    modalBody.innerHTML = rowsHtml;
+    modalBody.dataset.sig = rowsHtml;
+    const nextEl = modalBody.querySelector('[data-next]');
+    if(scrollToNextPending && nextEl){
+      modalBody.scrollTop += nextEl.getBoundingClientRect().top - modalBody.getBoundingClientRect().top;
+    } else {
+      modalBody.scrollTop = prevScroll;
+    }
+  }
+  scrollToNextPending = false;
+  if(opening) modalClose.focus();
+}
+
+function renderCard(destKey, times, nowMin){
+  const meta = STOP_META[destKey];
+  const originMeta = STOP_META[selectedOrigin];
+  const two = nextTwo(times, nowMin);
+  let html = `<div class="card" data-dest="${destKey}" style="--accent:${meta.color}">
+    <div class="dest"><span class="dot"></span>${meta.label} 방향</div>
+    <div class="sub">${originMeta.originLabel} → ${meta.label}</div>`;
+  if(two.length === 0){
+    html += `<div class="none">오늘 남은 운행이 없습니다</div>`;
+  } else {
+    const first = two[0];
+    const firstTag = [first.tomorrow ? '내일' : '', arrivalNoteFor(destKey, first)].filter(Boolean).join(' · ');
+    html += `<div class="next-time">${fmtFromMinutes(first.min)}${firstTag ? `<span class="tag">${firstTag}</span>` : ''}</div>`;
+    if(two[1]){
+      const secondArrival = arrivalNoteFor(destKey, two[1]);
+      html += `<div class="after-time">그 다음 <span class="val">${fmtFromMinutes(two[1].min)}</span>${two[1].tomorrow ? ' (내일)' : ''}${secondArrival ? ' · ' + secondArrival : ''}</div>`;
+    }
+  }
+  html += `<div class="expand-hint"><span>당일 시간표 보기</span><span class="chev">▾</span></div>`;
+
+  const isOn = !!notifyOn[destKey];
+  const disabled = !!customNow;
+  html += `<label class="notify-row ${isOn?'active':''}">
+    <input type="checkbox" class="notify-checkbox" data-dest="${destKey}" ${isOn?'checked':''} ${disabled?'disabled':''}>
+    <span>출발 ${LEAD_MINUTES}분 전 알림받기${disabled ? '<span class="notify-sub">실시간에서만 사용할 수 있어요</span>' : ''}</span>
+  </label>`;
+  html += `</div>`;
+  return html;
+}
+
+function render(){
+  const now = getNow();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+
+  document.getElementById('clock').textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+  document.getElementById('dateLabel').textContent =
+    `${now.getFullYear()}. ${now.getMonth()+1}. ${now.getDate()} (${['일','월','화','수','목','금','토'][now.getDay()]})`;
+  document.getElementById('testBadge').textContent = customNow ? 'STOP' : '';
+
+  const info = findActiveSchedule(now);
+  const statusEl = document.getElementById('statusLine');
+  const cardsEl = document.getElementById('cards');
+  const footnoteEl = document.getElementById('footnote');
+
+  renderOriginTabs(info ? info.schedule : null);
+
+  if(!info){
+    statusEl.innerHTML = `현재 운행 중인 통학버스 시간표가 없습니다.`;
+    statusEl.classList.add('closed');
+    cardsEl.innerHTML = ''; cardsEl.dataset.sig = ''; footnoteEl.innerHTML = '';
+    hideModal();
+    clearAllNotifyTimers();
+    return;
+  }
+
+  statusEl.classList.remove('closed');
+  if(info.closed){
+    statusEl.innerHTML = `오늘은 <b>${info.closedReason}</b> — 다음 정상 운행일에 다시 확인해주세요`;
+    statusEl.classList.add('closed');
+    cardsEl.innerHTML = ''; cardsEl.dataset.sig = ''; footnoteEl.innerHTML = '';
+    hideModal();
+    clearAllNotifyTimers();
+    return;
+  }
+
+  if(DATA.isFallback){
+    statusEl.classList.add('closed');
+    statusEl.innerHTML = `시간표를 불러오지 못해 <b>임시 테스트 데이터</b>로 표시 중이에요<br>hongik_sejong_school_bus.json 위치와 http(s) 서버로 열었는지 확인해주세요`;
+  } else {
+    statusEl.innerHTML = `현재 적용 시간표 · <b>${info.schedule.title.replace('통학버스 운행 시간표','').trim()}</b>`;
+  }
+
+  const hasLoopInfo = !!info.schedule.campusInternalLoop;
+  const destinations = availableStops(info.schedule).filter(k => k !== selectedOrigin);
+
+  let cardsHtml = '';
+  const destTimes = {};
+  for(const destKey of destinations){
+    const times = getDepartures(info.schedule, selectedOrigin, destKey, hasLoopInfo);
+    destTimes[destKey] = times;
+    cardsHtml += renderCard(destKey, times, nowMin);
+  }
+
+  // 매초 호출되므로, 내용이 바뀐 경우에만 카드 DOM을 교체한다.
+  if(cardsEl.dataset.sig !== cardsHtml){
+    cardsEl.innerHTML = cardsHtml;
+    cardsEl.dataset.sig = cardsHtml;
+
+    cardsEl.querySelectorAll('.notify-checkbox').forEach(cb => {
+      cb.addEventListener('change', async () => {
+        const destKey = cb.dataset.dest;
+        if(cb.checked){
+          const granted = await requestNotifyPermission();
+          if(!granted){ cb.checked = false; return; }
+          notifyOn[destKey] = true;
+        } else {
+          notifyOn[destKey] = false;
+          clearNotifyTimer(destKey);
+        }
+        render();
+      });
+    });
+  }
+
+  if(modalDest && destinations.includes(modalDest)){
+    updateModal(modalDest, destTimes[modalDest], nowMin, now);
+  } else if(modalDest){
+    hideModal();
+  }
+
+  for(const destKey of destinations){
+    scheduleNotifyForDest(destKey, destTimes[destKey], nowMin, now);
+  }
+  // 현재 표시되지 않는(다른 출발지 선택 시) 대상의 알림은 정리
+  Object.keys(notifyScheduled).forEach(k => { if(!destinations.includes(k)) clearNotifyTimer(k); });
+
+  // footnoteEl.innerHTML = approxUsed
+  //   ? '* 표시된 시간은 해당 정류장 출발 시각이며, 학교 도착은 가온관·세종관 경유 순환 운행으로 정확한 도착 시각은 별도 안내되지 않습니다.'
+  //   : '';
+
+}
+
+document.getElementById('cards').addEventListener('click', (e) => {
+  if(e.target.closest('.notify-row')) return;
+  const card = e.target.closest('.card');
+  if(!card) return;
+  modalDest = card.dataset.dest;
+  scrollToNextPending = true;
+  render();
+});
+
+modalClose.addEventListener('click', hideModal);
+modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && !modalOverlay.hidden) hideModal(); });
+
+document.getElementById('footer').innerHTML = `문의 · 한화고속관광 044-715-7783<br>학생복지팀 hakbok@hongik.ac.kr`;
+
+const timeTestToggle = document.getElementById('timeTestToggle');
+const timeTestPanel = document.getElementById('timeTestPanel');
+const overrideDateInput = document.getElementById('overrideDate');
+const overrideTimeInput = document.getElementById('overrideTime');
+
+timeTestToggle.addEventListener('click', () => {
+  const opening = timeTestPanel.hidden;
+  timeTestPanel.hidden = !opening;
+  if(opening){
+    const base = getNow();
+    overrideDateInput.value = dateStr(base);
+    overrideTimeInput.value = pad(base.getHours())+':'+pad(base.getMinutes());
+  }
+});
+
+document.getElementById('applyOverrideBtn').addEventListener('click', () => {
+  const dateVal = overrideDateInput.value;
+  const timeVal = overrideTimeInput.value;
+  if(!timeVal){ overrideTimeInput.focus(); return; }
+  const [y, mo, da] = (dateVal || dateStr(new Date())).split('-').map(Number);
+  const [h, mi] = timeVal.split(':').map(Number);
+  customNow = new Date(y, mo - 1, da, h, mi, 0);
+  render();
+});
+
+document.getElementById('resetOverrideBtn').addEventListener('click', () => {
+  customNow = null;
+  timeTestPanel.hidden = true;
+  render();
+});
+
+const statusEl0 = document.getElementById('statusLine');
+statusEl0.textContent = '시간표를 불러오는 중...';
+
+fetch('hongik_sejong_school_bus.json', { cache: 'no-cache' })
+  .then((res) => {
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  })
+  .then((data) => {
+    DATA = data;
+    render();
+    setInterval(render, 1000);
+  })
+  .catch((err) => {
+    console.warn('시간표 로드 실패, 임시 데이터로 대체합니다:', err);
+    DATA = buildFallbackData();
+    render();
+    setInterval(render, 1000);
+  });
+
+if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+  navigator.serviceWorker.register('service-worker.js').catch(() => {});
+}
+</script>
+</body>
+</html>
